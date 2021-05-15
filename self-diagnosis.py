@@ -6,7 +6,6 @@ import asyncio
 import re
 import webbrowser
 
-from threading import Timer
 from selenium import webdriver
 from selenium.common.exceptions import SessionNotCreatedException, NoAlertPresentException
 from selenium.webdriver.common.keys import Keys
