@@ -25,7 +25,7 @@ from bs4 import BeautifulSoup
 
 
 class Self_Diagnosis():
-    __version__ = "0.0.4"
+    __version__ = "0.0.5"
 
     def __init__(self):
         asyncio.run(self.start_menu())
@@ -219,7 +219,7 @@ class Self_Diagnosis():
         chrome_options = webdriver.ChromeOptions()
         chrome_options.add_argument("--incognito")
         chrome_options.add_argument("disable-gpu")
-        # chrome_options.add_argument('headless')
+        chrome_options.add_argument('headless')
         chrome_options.add_argument('window-size=1920x1080')
         for bw in os.listdir("./driver"):
             print(f"[ CHROME DRIVER ] Select : {bw}")
@@ -278,6 +278,8 @@ class Self_Diagnosis():
             version_stats = "최신버전"
         elif int(self.__version__.replace(".", "")) != int(last_version.replace(".", "")):
             version_stats = "구버전"
+        if os.path.isfile("./자가진단_old.exe"):
+            os.remove("./자가진단_old.exe")
         while True:
             os.system("cls")
             print(
