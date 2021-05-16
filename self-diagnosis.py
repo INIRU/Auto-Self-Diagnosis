@@ -25,7 +25,7 @@ from bs4 import BeautifulSoup
 
 
 class Self_Diagnosis():
-    __version__ = "0.0.5"
+    __version__ = "0.0.7"
 
     def __init__(self):
         asyncio.run(self.start_menu())
@@ -175,6 +175,7 @@ class Self_Diagnosis():
         github에서 맨 마지막 릴리스 버전을 확인하고 마지막 릴리스 버전이 현재 릴리스 버전보다 높으면
         웹사이트로 이동합니다.
         """
+        os.system("cls")
         self.dia_printf("새로운 버전이 있는지 확인 중입니다.")
         last_version = await self.last_ver()
         if int(self.__version__.replace(".", "")) < int(last_version.replace(".", "")):
@@ -185,16 +186,20 @@ class Self_Diagnosis():
                     f"https://github.com/INIRU/Auto-Self-Diagnosis/releases/download/{last_version}/Auto-Self-Diagnosis.zip")
                 with open("Auto-Self-Diagnosis.zip", "wb") as file:
                     file.write(r.content)
-                dia_zip = zipfile.ZipFile("./Auto-Self-Diagnosis.zip")
+                dia_zip = zipfile.ZipFile("./Auto-Self-Diagnosis.zip", "r")
+                for file in dia_zip.namelist():
+                    if "driver/" in str(file):
+                        dia_zip.extract(file)
                 dia_zip.extract("└┌░í┴°┤▄.exe")
                 if os.path.isfile("./읽어주세요.txt"):
                     os.remove("./읽어주세요.txt")
                 dia_zip.extract("└╨╛ε┴╓╝╝┐Σ.txt")
+                dia_zip.close()
                 if os.path.isfile("./Auto-Self-Diagnosis.zip"):
                     os.remove("./Auto-Self-Diagnosis.zip")
-                if os.path.isfile("./자가진단_old.exe"):
+                if os.path.isfile("./자가진단.exe"):
                     os.rename("./자가진단.exe", "./자가진단_old.exe")
-                await asyncio.sleep(1)
+                await asyncio.sleep(0.5)
                 if os.path.isfile("./└┌░í┴°┤▄.exe"):
                     os.rename("./└┌░í┴°┤▄.exe", "./자가진단.exe")
                 if os.path.isfile("./└╨╛ε┴╓╝╝┐Σ.txt"):
@@ -203,10 +208,10 @@ class Self_Diagnosis():
                     "업데이트가 완료되었습니다.\n\n자가진단_old.exe는 삭제를 해주세요.\n프로그램을 종료하시겠습니까? (Y/N) : ")
                 if yes_no.upper() == "Y":
                     exit()
-                if yes_no.upper() == "N":
-                    await self.dia_start()
+                elif yes_no.upper() == "N":
+                    await self.start_menu()
             elif yes_no.upper() == "N":
-                self.dia_printf("시작메뉴로 이동합니다.")
+                await self.start_menu()
         elif int(self.__version__.replace(".", "")) == int(last_version.replace(".", "")):
             self.dia_printf("이미 최신 버전 입니다.")
 
@@ -448,7 +453,7 @@ class Self_Diagnosis():
                     f"{info['SchoolName']} 를/(을) 재학중이신 {info['My_Name']}님 자가진단 (무증상)으로 완료되었습니다.")
                 await self.lastday_set()
                 await asyncio.sleep(0.3)
-                await self.screnn_shot(driver)
+                await self.screenshot(driver)
                 driver.close()
             else:
                 time = datetime.datetime.strptime(
