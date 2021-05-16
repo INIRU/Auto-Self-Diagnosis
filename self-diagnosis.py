@@ -16,6 +16,7 @@ import asyncio
 import webbrowser
 import requests
 import re
+import zipfile
 
 from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import SessionNotCreatedException, NoAlertPresentException
@@ -24,7 +25,7 @@ from bs4 import BeautifulSoup
 
 
 class Self_Diagnosis():
-    __version__ = "0.0.3"
+    __version__ = "0.0.4"
 
     def __init__(self):
         asyncio.run(self.start_menu())
@@ -69,7 +70,7 @@ class Self_Diagnosis():
         if not os.path.exists("./database"):
             self.dia_printf("database 폴더가 없습니다. 생성하겠습니다.")
             os.mkdir("./database")
-        if not os.path.exists("./database/my_info.json"):
+        if not os.path.isfile("./database/my_info.json"):
             self.dia_printf("my_info.json이 없습니다. 생성하겠습니다.")
             open("./database/my_info.json", 'w')
             info = {
@@ -86,8 +87,8 @@ class Self_Diagnosis():
             }
             with open("./database/my_info.json", "w", encoding="utf-8") as f:
                 json.dump(info, f, indent=4, ensure_ascii=False)
-            with open("./database/my_info.json", "r", encoding="utf-8") as r:
-                info = json.load(r)
+        with open("./database/my_info.json", "r", encoding="utf-8") as r:
+            info = json.load(r)
         self.dia_printf("누락된 값이 있는지 확인중입니다.")
         for key in list(info.keys()):
             if info[key] is None:
@@ -178,11 +179,33 @@ class Self_Diagnosis():
         last_version = await self.last_ver()
         if int(self.__version__.replace(".", "")) < int(last_version.replace(".", "")):
             yes_no = self.dia_input(
-                f"새로운 업데이트가 있습니다.\n현재 버전: {self.__version__}\n최신 버전: {last_version}\n업데이트를 위한 웹페이지로 이동하시겠습니까? (Y/N) : ")
-            if yes_no.upper == "Y":
-                webbrowser.open(
-                    "https://github.com/INIRU/Auto-Self-Diagnosis/releases")
-            if yes_no.upper == "N":
+                f"새로운 업데이트가 있습니다.\n현재 버전: {self.__version__}\n최신 버전: {last_version}\n업데이트를 하시겠습니까? (Y/N) : ")
+            if yes_no.upper() == "Y":
+                r = requests.get(
+                    f"https://github.com/INIRU/Auto-Self-Diagnosis/releases/download/{last_version}/Auto-Self-Diagnosis.zip")
+                with open("Auto-Self-Diagnosis.zip", "wb") as file:
+                    file.write(r.content)
+                dia_zip = zipfile.ZipFile("./Auto-Self-Diagnosis.zip")
+                dia_zip.extract("└┌░í┴°┤▄.exe")
+                if os.path.isfile("./읽어주세요.txt"):
+                    os.remove("./읽어주세요.txt")
+                dia_zip.extract("└╨╛ε┴╓╝╝┐Σ.txt")
+                if os.path.isfile("./Auto-Self-Diagnosis.zip"):
+                    os.remove("./Auto-Self-Diagnosis.zip")
+                if os.path.isfile("./자가진단_old.exe"):
+                    os.rename("./자가진단.exe", "./자가진단_old.exe")
+                await asyncio.sleep(1)
+                if os.path.isfile("./└┌░í┴°┤▄.exe"):
+                    os.rename("./└┌░í┴°┤▄.exe", "./자가진단.exe")
+                if os.path.isfile("./└╨╛ε┴╓╝╝┐Σ.txt"):
+                    os.rename("./└╨╛ε┴╓╝╝┐Σ.txt", "./읽어주세요.txt")
+                yes_no = self.dia_input(
+                    "업데이트가 완료되었습니다.\n\n자가진단_old.exe는 삭제를 해주세요.\n프로그램을 종료하시겠습니까? (Y/N) : ")
+                if yes_no.upper() == "Y":
+                    exit()
+                if yes_no.upper() == "N":
+                    await self.dia_start()
+            elif yes_no.upper() == "N":
                 self.dia_printf("시작메뉴로 이동합니다.")
         elif int(self.__version__.replace(".", "")) == int(last_version.replace(".", "")):
             self.dia_printf("이미 최신 버전 입니다.")
