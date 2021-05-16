@@ -5,12 +5,18 @@ import datetime
 import asyncio
 import re
 import webbrowser
+import requests
+import zipfile
+import subprocess
+import ctypes
 
+from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.common.exceptions import SessionNotCreatedException, NoAlertPresentException
 from selenium.webdriver.common.keys import Keys
 
 now = datetime.datetime.now()
+__version__ = "0.0.2"
 
 
 async def info_data_load():
@@ -100,6 +106,36 @@ async def data_setup():
         return info
 
 
+async def last_ver():
+    r = requests.get(f"https://github.com/INIRU/Auto-Self-Diagnosis/releases")
+    soup = BeautifulSoup(r.content, "html.parser")
+    return soup.find_all(attrs={'class': 'css-truncate-target'}, style="max-width: 125px")[0].text
+
+
+async def update():
+    print("[ 자기진단 ] 새로운 버전이 있는지 확인중입니다.")
+    last_version = await last_ver()
+    if int(__version__.replace(".", "")) < int(last_version.replace(".", "")):
+        r = requests.get(
+            f"https://github.com/INIRU/Auto-Self-Diagnosis/releases/download/{last_version}/Auto-Self-Diagnosis.zip")
+        with open("Auto-Self-Diagnosis.zip", "wb") as file:
+            file.write(r.content)
+        zipfile.ZipFile("./Auto-Self-Diagnosis.zip").extract("└┌░í┴°┤▄.exe")
+        if os.path.isfile("./Auto-Self-Diagnosis.zip"):
+            os.remove("./Auto-Self-Diagnosis.zip")
+        if os.path.isfile("./자가진단_old.exe"):
+            os.rename("./자가진단.exe", "./자가진단_old.exe")
+        if os.path.isfile("./자가진단.exe"):
+            os.rename("./자가진단.exe", "./자가진단_old.exe")
+        await asyncio.sleep(1)
+        if os.path.isfile("./└┌░í┴°┤▄.exe"):
+            os.rename("./└┌░í┴°┤▄.exe", "./자가진단.exe")
+        print("[ 자기진단 ] 업데이트가 완료되었습니다.\n\n자가진단_old.exe는 삭제를 해주세요.")
+        exit()
+    elif int(__version__.replace(".", "")) == int(last_version.replace(".", "")):
+        print("[ 자기진단 ] 이미 최신버전 입니다.")
+
+
 async def browser_setup():
     """
     크롬 드라이버의 함수이다. driver폴더에 있는 크롬 드라이버 버전 순서대로 내려가며 
@@ -149,7 +185,7 @@ async def info_new(reason: bool = True):
     """
     my_info를 초기화 시킵니다.
     """
-    os.system("cls")
+    ctypes.windll.shell32.ShellExecuteA(0, "open", "자가진단.exe", None, None, 1)
     if reason == True:
         print("[ 자가진단 ] 정보가 잘 못 되었습니다.\n\n다시 작성을 시도합니다.")
     with open("./database/my_info.json", "r", encoding="utf-8") as r:
@@ -358,8 +394,14 @@ async def start_menu():
     """
     시작 메뉴
     """
+    await update()
+    last_version = await last_ver()
+    if int(__version__.replace(".", "")) == int(last_version.replace(".", "")):
+        if os.path.isfile("./자가진단_old.exe"):
+            os.remove("./자가진단_old.exe")
+        version_stats = "최신 버전"
     os.system("cls")
-    print("""
+    print(f"""
 ┍──────────────────────────────
 │
 │   자동 자가진단 (Auto Self Diagnosis)
@@ -371,6 +413,7 @@ async def start_menu():
 │
 │
 │  * 제작자 : INIRU#0001
+│  * 버전   : {__version__} | {version_stats}
 │
 ┕──────────────────────────────
 """)
