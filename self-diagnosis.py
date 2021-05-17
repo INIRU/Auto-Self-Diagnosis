@@ -26,7 +26,7 @@ from bs4 import BeautifulSoup
 
 
 class Self_Diagnosis():
-    __version__ = "0.0.9"
+    __version__ = "0.1.0"
 
     def __init__(self):
         asyncio.run(self.start_menu())
@@ -59,8 +59,6 @@ class Self_Diagnosis():
         for key in list(info.keys()):
             info[key] = None
         info["waitingTime"] = 1.7
-        info["lastday"] = 1
-        info["last_dia"] = 1
         with open("./database/my_info.json", "w", encoding="utf-8") as f:
             json.dump(info, f, indent=4, ensure_ascii=False)
 
@@ -95,7 +93,7 @@ class Self_Diagnosis():
             info = json.load(r)
         self.dia_printf("누락된 값이 있는지 확인중입니다.")
         for key in list(info.keys()):
-            if info[key] is None:
+            if info[key] is None and not key in ("last_dia", "lastday"):
                 await self.info_new()
                 info = await self.data_setup()
             elif info[key] is not None:
@@ -137,7 +135,7 @@ class Self_Diagnosis():
                                 text="지정된 시간타입으로 입력하여주세요. | (시|분)", title="[ ERROR ]", button="OK")
 
                 async def City_Code():
-                    Citylist = ["서울", "부산", "대구", "인천", "광주", "대전", "울산", "세종",
+                    Citylist = ["서울", "부산", "대구", "인천", "광주", "대전", "울산", "세종", "Null",
                                 "경기", "강원", "충청북", "충청남", "전라북", "전라남", "경상북", "경상남", "제주"]
                     while True:
                         os.system("cls")
@@ -146,7 +144,8 @@ class Self_Diagnosis():
                         CityCode = None
                         for i, city in enumerate(Citylist):
                             if City.startswith(city):
-                                CityCode = f"{i+1:02b}"
+                                CityCode = str((i+1)).zfill(2)
+                                print(CityCode)
                                 self.dia_printf(f"정상적으로 등록되었습니다. | {City}")
                                 await asyncio.sleep(0.7)
                                 return str(CityCode)
@@ -344,9 +343,9 @@ class Self_Diagnosis():
         """
         await self.update()
         last_version = await self.last_ver()
-        if int(self.__version__.replace(".", "")) == int(last_version.replace(".", "")):
+        if int(self.__version__.replace(".", "")) >= int(last_version.replace(".", "")):
             version_stats = "최신버전"
-        elif int(self.__version__.replace(".", "")) != int(last_version.replace(".", "")):
+        elif int(self.__version__.replace(".", "")) < int(last_version.replace(".", "")):
             version_stats = "구버전"
         if os.path.isfile("./자가진단_old.exe"):
             os.remove("./자가진단_old.exe")
@@ -384,7 +383,8 @@ class Self_Diagnosis():
         os.system("cls")
         dia_time = (datetime.datetime.strptime(info["Dia_Time"], "%H:%M")).strftime(
             "%p %I:%M").replace("PM", "오후").replace("AM", "오전")
-        City = ["서울특별시", "부산광역시", "대구광역시", "인천광역시", "광주광역시", "대전광역시", "울산광역시", "세종특별자치시",
+        print(dia_time)
+        City = ["서울특별시", "부산광역시", "대구광역시", "인천광역시", "광주광역시", "대전광역시", "울산광역시", "세종특별자치시", "",
                 "경기도", "강원도", "충청북도", "충청남도", "전라북도", "전라남도", "경상북도", "경상남도", "제주도"]
         SchLvl = ["유치원", "초등학교", "중학교", "고등학교", "특수학교"]
         while True:
@@ -415,7 +415,7 @@ class Self_Diagnosis():
             info = await self.info_data_load()
             now = datetime.datetime.now()
             os.system("cls")
-            if int(now.strftime("%H%M")) >= int(info["Dia_Time"].replace(":", "")) and int(now.strftime("%Y%m%d")) != info["lastday"]:
+            if int(now.strftime("%H%M")) >= int(info["Dia_Time"].replace(":", "")) and int(now.strftime("%Y%m%d")) != (1 if info["lastday"] == None else info["lastday"]):
 
                 # 홈페이지 접속 준비 드라이버 셋업
 
@@ -525,13 +525,15 @@ class Self_Diagnosis():
                 await self.screenshot(driver)
                 driver.close()
             else:
-                time = datetime.datetime.strptime(
-                    info["last_dia"], "%Y %m %d %H %M")
-                last_dia_Time = time.strftime("%Y. %m. %d %p %I:%M").replace(
-                    "PM", "오후").replace("AM", "오전")
+                if info["last_dia"] is not None:
+                    time = datetime.datetime.strptime(
+                        info["last_dia"], "%Y %m %d %H %M")
+                    last_dia_Time = time.strftime("%Y. %m. %d %p %I:%M").replace(
+                        "PM", "오후").replace("AM", "오전")
                 os.system("cls")
                 self.dia_printf(
-                    f"정해진 시간이 아니여서 실행이 중단되었습니다.\n\n이미 {last_dia_Time}에 자가진단을 완료하였습니다.")
+                    "정해진 시간이 아니여서 실행이 중단되었습니다." +
+                    (f"\n\n이미 {last_dia_Time}에 자가진단을 완료하였습니다." if info["last_dia"] is not None else ""))
                 await asyncio.sleep(5)
 
 
