@@ -17,6 +17,7 @@ import webbrowser
 import requests
 import re
 import zipfile
+import pyautogui
 
 from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import SessionNotCreatedException, NoAlertPresentException
@@ -25,7 +26,7 @@ from bs4 import BeautifulSoup
 
 
 class Self_Diagnosis():
-    __version__ = "0.0.7"
+    __version__ = "0.0.8"
 
     def __init__(self):
         asyncio.run(self.start_menu())
@@ -37,6 +38,9 @@ class Self_Diagnosis():
         print("[ 자가진단 ] " + text)
 
     async def last_ver(self):
+        """
+        github에 있는 마지막 버전을 가져옵니다.
+        """
         r = requests.get(
             "https://github.com/INIRU/Auto-Self-Diagnosis/releases")
         soup = BeautifulSoup(r.content, "html.parser")
@@ -92,7 +96,6 @@ class Self_Diagnosis():
         self.dia_printf("누락된 값이 있는지 확인중입니다.")
         for key in list(info.keys()):
             if info[key] is None:
-                print("#############################")
                 await self.info_new()
                 info = await self.data_setup()
             elif info[key] is not None:
@@ -108,67 +111,123 @@ class Self_Diagnosis():
         os.system("cls")
         with open("./database/my_info.json", "r", encoding="utf-8") as r:
             info = json.load(r)
-        yes_or_no = self.dia_input(
-            "데이터파일에 데이터가 존재하지 않습니다.\n등록하시겠습니까? (Y/N) : ")
-        os.system("cls")
-        if yes_or_no.upper() == "N":
-            self.dia_printf("데이터를 등록하지 않아 프로그램이 5초후 종료됩니다.")
-            await asyncio.sleep(5)
-            exit()
-        elif yes_or_no.upper() == "Y":
-            diatime = self.dia_input(
-                "자동으로 자가 진단을 실행할 시간을 입력하여 주세요.\n\nex) 오전 7시20분 -> 7:20 오후 1시:20분 -> 13:20 | H(24):M : ")
-            try:
-                time = datetime.datetime.strptime(diatime, "%H:%M")
-                self.dia_printf(
-                    f"시간이 등록되었습니다. : " + time.strftime('%p %I:%M').replace('PM', '오후').replace('AM', '오전'))
-            except:
-                raise SyntaxError("[ ERROR ] 지정해 준 시간 타입으로 입력하여 주세요.")
-            City = self.dia_input(
-                "자신의 학교 관할 교육청의 지역을 입력하여 주세요. ex) 서울특별시, 서울, 인천 : ")
-            Citylist = ["서울", "부산", "대구", "인천", "광주", "대전", "울산", "세종",
-                        "경기", "강원", "충청북", "충청남", "전라북", "전라남", "경상북", "경상남", "제주"]
-            CityCode = None
-            for i, city in enumerate(Citylist):
-                if City.startswith(city):
-                    CityCode = f"{i+1:02b}"
-                    break
-            if CityCode is None:
-                raise SyntaxError("[ ERROR ] 인식할 수 없는 지역입니다.")
-            SchLvl = self.dia_input(
-                "자신의 학교급을 입력하여 주세요. ex) 유치원, 초등학교, 중학교, 고등학교, 특수학교 : ")
-            SchLvllist = ["유", "초", "중", "고", "특"]
-            SchLvlCode = None
-            for i, SchLvlName in enumerate(SchLvllist):
-                if SchLvl.startswith(SchLvlName):
-                    SchLvlCode = i + 1
-                    break
-            if SchLvlCode is None:
-                raise SyntaxError("[ ERROR ] 인식할 수 없는 학교급입니다.")
-            SchName = self.dia_input(
-                "다니고 있는 학교(유치원) 명을 입력하여 주세요. ex) 자진중, 자진고등학교 : ")
-            if len(SchName) <= 1:
-                raise SyntaxError(f"[ ERROR ] 2글자 이상으로 입력하여 주세요.")
-            self.dia_printf(f"정상적을 등록되었습니다. | {SchName}")
-            My_Name = self.dia_input("자신의 본명을 입력하여주세요. : ")
-            print(f"정상적으로 등록되었습니다. : {My_Name}")
-            My_Bir = self.dia_input("자신의 생년월일 6자리를 입력하여 주세요. ex) 050819 : ")
-            if len(My_Bir) != 6:
-                raise SyntaxError("[ ERROR ] 6자리를 입력하여 주세요.")
-            My_Pass = self.dia_input("자신의 자가 진단 비밀번호 4자리를 입력하여 주세요. : ")
-            if len(My_Pass) != 4:
-                raise SyntaxError("[ ERROR ] 4자리를 입력하여 주세요.")
-            self.dia_printf("비밀번호가 정상적으로 등록되었습니다.")
-            info["Dia_Time"] = diatime
-            info["CityCode"] = CityCode
-            info["SchLvlCode"] = str(SchLvlCode)
-            info["SchoolName"] = SchName
-            info["My_Name"] = My_Name
-            info["My_Bir"] = My_Bir
-            info["My_Pass"] = My_Pass
-            with open("./database/my_info.json", "w", encoding="utf-8") as f:
-                json.dump(info, f, indent=4, ensure_ascii=False)
-            return info
+        while True:
+            os.system("cls")
+            yes_or_no = self.dia_input(
+                "데이터파일에 데이터가 존재하지 않습니다.\n등록하시겠습니까? (Y/N) : ")
+            os.system("cls")
+            if yes_or_no.upper() == "N":
+                self.dia_printf("데이터를 등록하지 않아 프로그램이 5초후 종료됩니다.")
+                await asyncio.sleep(5)
+                exit()
+            elif yes_or_no.upper() == "Y":
+                async def dia_time():
+                    while True:
+                        os.system("cls")
+                        diatime = self.dia_input(
+                            "자동으로 자가 진단을 실행할 시간을 입력하여 주세요.\n\nex) 오전 7시20분 -> 7:20 오후 1시:20분 -> 13:20 | (시:분) : ")
+                        try:
+                            time = datetime.datetime.strptime(diatime, "%H:%M")
+                            self.dia_printf(
+                                f"시간이 등록되었습니다. : " + time.strftime('%p %I:%M').replace('PM', '오후').replace('AM', '오전'))
+                            await asyncio.sleep(0.7)
+                            return diatime
+                        except ValueError:
+                            pyautogui.alert(
+                                text="지정된 시간타입으로 입력하여주세요. | (시|분)", title="[ ERROR ]", button="OK")
+
+                async def City_Code():
+                    Citylist = ["서울", "부산", "대구", "인천", "광주", "대전", "울산", "세종",
+                                "경기", "강원", "충청북", "충청남", "전라북", "전라남", "경상북", "경상남", "제주"]
+                    while True:
+                        os.system("cls")
+                        City = self.dia_input(
+                            "자신의 학교 관할 교육청의 지역을 입력하여 주세요. ex) 서울특별시, 서울, 인천 : ")
+                        CityCode = None
+                        for i, city in enumerate(Citylist):
+                            if City.startswith(city):
+                                CityCode = f"{i+1:02b}"
+                                self.dia_printf(f"정상적으로 등록되었습니다. | {City}")
+                                await asyncio.sleep(0.7)
+                                return str(CityCode)
+                        if CityCode is None:
+                            pyautogui.alert(text="인식할 수 없는 지역입니다.",
+                                            title="[ ERROR ]", button="OK")
+
+                async def SchLvl():
+                    SchLvllist = ["유", "초", "중", "고", "특"]
+                    while True:
+                        os.system("cls")
+                        SchLvl = self.dia_input(
+                            "자신의 학교급을 입력하여 주세요. ex) 유치원, 초등학교, 중학교, 고등학교, 특수학교 : ")
+                        SchLvlCode = None
+                        for i, SchLvlName in enumerate(SchLvllist):
+                            if SchLvl.startswith(SchLvlName):
+                                SchLvlCode = i + 1
+                                self.dia_printf(f"정상적으로 등록되었습니다. | {SchLvl}")
+                                await asyncio.sleep(0.7)
+                                return str(SchLvlCode)
+                        if SchLvlCode is None:
+                            pyautogui.alert(text="인식할 수 없는 학교급입니다.",
+                                            title="[ ERROR ]", button="OK")
+
+                async def Sch_Name():
+                    while True:
+                        os.system("cls")
+                        SchName = self.dia_input(
+                            "다니고 있는 학교(유치원) 명을 입력하여 주세요. ex) 자진중, 자진고등학교 : ")
+                        if len(SchName) <= 1:
+                            pyautogui.alert(text="2글자 이상으로 입력하여주세요.",
+                                            title="[ ERROR ]", button="OK")
+                        elif len(SchName) >= 2:
+                            self.dia_printf(f"정상적으로 등록되었습니다. | {SchName}")
+                            await asyncio.sleep(0.7)
+                            return SchName
+
+                async def MyName():
+                    while True:
+                        os.system("cls")
+                        My_Name = self.dia_input("자신의 본명을 입력하여주세요. : ")
+                        self.dia_printf(f"정상적으로 등록되었습니다. : {My_Name}")
+                        await asyncio.sleep(0.7)
+                        return My_Name
+
+                async def MyBir():
+                    while True:
+                        os.system("cls")
+                        My_Bir = self.dia_input(
+                            "자신의 생년월일 6자리를 입력하여 주세요. ex) 050819 : ")
+                        if len(My_Bir) != 6:
+                            pyautogui.alert(text="6자리를 입력하여 주세요.",
+                                            title="[ ERROR ]", button="OK")
+                        elif len(My_Bir) == 6:
+                            self.dia_printf(f"정상적으로 등록되었습니다. | {My_Bir}")
+                            await asyncio.sleep(0.7)
+                            return My_Bir
+
+                async def MyPass():
+                    while True:
+                        os.system("cls")
+                        My_Pass = self.dia_input(
+                            "자신의 자가진단 비밀번호 4자리를 입력하여 주세요. : ")
+                        if len(My_Pass) != 4:
+                            pyautogui.alert(text="4자리를 입력하여 주세요.",
+                                            title="[ ERROR ]", button="OK")
+                        elif len(My_Pass) == 4:
+                            self.dia_printf("비밀번호가 정상적으로 등록되었습니다.")
+                            await asyncio.sleep(0.7)
+                            return My_Pass
+
+                info["Dia_Time"] = await dia_time()
+                info["CityCode"] = await City_Code()
+                info["SchLvlCode"] = await SchLvl()
+                info["SchoolName"] = await Sch_Name()
+                info["My_Name"] = await MyName()
+                info["My_Bir"] = await MyBir()
+                info["My_Pass"] = await MyPass()
+                with open("./database/my_info.json", "w", encoding="utf-8") as f:
+                    json.dump(info, f, indent=4, ensure_ascii=False)
+                return info
 
     async def update(self):
         """
@@ -179,39 +238,39 @@ class Self_Diagnosis():
         self.dia_printf("새로운 버전이 있는지 확인 중입니다.")
         last_version = await self.last_ver()
         if int(self.__version__.replace(".", "")) < int(last_version.replace(".", "")):
-            yes_no = self.dia_input(
-                f"새로운 업데이트가 있습니다.\n현재 버전: {self.__version__}\n최신 버전: {last_version}\n업데이트를 하시겠습니까? (Y/N) : ")
-            if yes_no.upper() == "Y":
-                r = requests.get(
-                    f"https://github.com/INIRU/Auto-Self-Diagnosis/releases/download/{last_version}/Auto-Self-Diagnosis.zip")
-                with open("Auto-Self-Diagnosis.zip", "wb") as file:
-                    file.write(r.content)
-                dia_zip = zipfile.ZipFile("./Auto-Self-Diagnosis.zip", "r")
-                for file in dia_zip.namelist():
-                    if "driver/" in str(file):
-                        dia_zip.extract(file)
-                dia_zip.extract("└┌░í┴°┤▄.exe")
-                if os.path.isfile("./읽어주세요.txt"):
-                    os.remove("./읽어주세요.txt")
-                dia_zip.extract("└╨╛ε┴╓╝╝┐Σ.txt")
-                dia_zip.close()
-                if os.path.isfile("./Auto-Self-Diagnosis.zip"):
-                    os.remove("./Auto-Self-Diagnosis.zip")
-                if os.path.isfile("./자가진단.exe"):
-                    os.rename("./자가진단.exe", "./자가진단_old.exe")
-                await asyncio.sleep(0.5)
-                if os.path.isfile("./└┌░í┴°┤▄.exe"):
-                    os.rename("./└┌░í┴°┤▄.exe", "./자가진단.exe")
-                if os.path.isfile("./└╨╛ε┴╓╝╝┐Σ.txt"):
-                    os.rename("./└╨╛ε┴╓╝╝┐Σ.txt", "./읽어주세요.txt")
+            self.dia_printf(
+                f"새로운 업데이트가 있습니다.\n현재 버전: {self.__version__}\n최신 버전: {last_version}\n\n파일을 다운받는중...")
+            r = requests.get(
+                f"https://github.com/INIRU/Auto-Self-Diagnosis/releases/download/{last_version}/Auto-Self-Diagnosis.zip")
+            with open("Auto-Self-Diagnosis.zip", "wb") as file:
+                file.write(r.content)
+            dia_zip = zipfile.ZipFile("./Auto-Self-Diagnosis.zip", "r")
+            for file in dia_zip.namelist():
+                if "driver/" in str(file):
+                    dia_zip.extract(file)
+            dia_zip.extract("└┌░í┴°┤▄.exe")
+            if os.path.isfile("./읽어주세요.txt"):
+                os.remove("./읽어주세요.txt")
+            dia_zip.extract("└╨╛ε┴╓╝╝┐Σ.txt")
+            dia_zip.close()
+            if os.path.isfile("./Auto-Self-Diagnosis.zip"):
+                os.remove("./Auto-Self-Diagnosis.zip")
+            if os.path.isfile("./자가진단.exe"):
+                os.rename("./자가진단.exe", "./자가진단_old.exe")
+            await asyncio.sleep(0.5)
+            if os.path.isfile("./└┌░í┴°┤▄.exe"):
+                os.rename("./└┌░í┴°┤▄.exe", "./자가진단.exe")
+            if os.path.isfile("./└╨╛ε┴╓╝╝┐Σ.txt"):
+                os.rename("./└╨╛ε┴╓╝╝┐Σ.txt", "./읽어주세요.txt")
+            while True:
+                os.system("cls")
                 yes_no = self.dia_input(
-                    "업데이트가 완료되었습니다.\n\n자가진단_old.exe는 삭제를 해주세요.\n프로그램을 종료하시겠습니까? (Y/N) : ")
+                    "업데이트가 완료되었습니다.\n\n자가진단_old.exe는 제거 해주세요.\n프로그램을 종료하시겠습니까? (Y/N) : ")
                 if yes_no.upper() == "Y":
                     exit()
                 elif yes_no.upper() == "N":
                     await self.start_menu()
-            elif yes_no.upper() == "N":
-                await self.start_menu()
+                    break
         elif int(self.__version__.replace(".", "")) == int(last_version.replace(".", "")):
             self.dia_printf("이미 최신 버전 입니다.")
 
@@ -220,7 +279,6 @@ class Self_Diagnosis():
         크롬 드라이버를 준비하고 셋팅하는 함수 입니다. driver 폴더에 있는 크롬 드라이버들을
         버전 순서대로 내려가며 자신의 크롬 브라우저에 맞는 드라이버를 찾습니다.
         """
-
         chrome_options = webdriver.ChromeOptions()
         chrome_options.add_argument("--incognito")
         chrome_options.add_argument("disable-gpu")
@@ -235,18 +293,25 @@ class Self_Diagnosis():
             except SessionNotCreatedException:
                 self.dia_printf(
                     "크롬 브라우저와 크롬 드라이버가 호환되지 않습니다.\n\n[ 자가진단 ] 다른 버전의 크롬 드라이버로 다시 진행합니다.")
-        yes_no = self.dia_input(
-            "크롬 브라우저가 없거나 호환되는 드라이버가 없습니다.\n\n 크롬 브라우저 업데이트(다운로드) 받기 (Y/N) : ")
-        if yes_no.upper() == "N":
-            exit()
-        elif yes_no.upper() == "Y":
-            webbrowser.open(
-                "https://www.google.co.kr/chrome/?brand=IBEF&gclid=CjwKCAjwv_iEBhASEiwARoemvEvKcHLytJDw3JXmNJOBqSdeBoJt0K1NEtYWABIsyE5kMb22O4Z2JhoCVckQAvD_BwE&gclsrc=aw.ds")
-            yes_no = self.dia_input("크롬 브라우저를 다운로드(업데이트)를/(을) 하셨나요? (Y/N) :")
+        while True:
+            os.system("cls")
+            yes_no = self.dia_input(
+                "크롬 브라우저가 없거나 호환되는 드라이버가 없습니다.\n\n 크롬 브라우저 업데이트(다운로드) 받기 (Y/N) : ")
+            if yes_no.upper() == "N":
+                exit()
+            elif yes_no.upper() == "Y":
+                webbrowser.open(
+                    "https://www.google.co.kr/chrome/?brand=IBEF&gclid=CjwKCAjwv_iEBhASEiwARoemvEvKcHLytJDw3JXmNJOBqSdeBoJt0K1NEtYWABIsyE5kMb22O4Z2JhoCVckQAvD_BwE&gclsrc=aw.ds")
+                break
+        while True:
+            os.system("cls")
+            yes_no = self.dia_input(
+                "크롬 브라우저를 다운로드(업데이트)를/(을) 하셨나요? (Y/N) : ")
             if yes_no.upper() == "N":
                 exit()
             elif yes_no.upper() == "Y":
                 await self.dia_start()
+                break
 
     async def lastday_set(self):
         """
@@ -322,21 +387,25 @@ class Self_Diagnosis():
         City = ["서울특별시", "부산광역시", "대구광역시", "인천광역시", "광주광역시", "대전광역시", "울산광역시", "세종특별자치시",
                 "경기도", "강원도", "충청북도", "충청남도", "전라북도", "전라남도", "경상북도", "경상남도", "제주도"]
         SchLvl = ["유치원", "초등학교", "중학교", "고등학교", "특수학교"]
-        print(
-            f"자동 자가진단 시간 | {dia_time}"
-            f"\n교육청 지역 | {City[int(info['CityCode'])-1]}"
-            f"\n학교급 | {SchLvl[int(info['SchLvlCode'])-1]}"
-            f"\n학교명 | {info['SchoolName']}\n"
-            f"\n이름 | {info['My_Name']}"
-            f"\n생년월일 (6자리) | {info['My_Bir']}"
-            f"자가진단 비밀번호 | {info['My_Pass'][:2]+'**'}\n"
-        )
-        yes_no = self.dia_input("데이터를 초기화 하실건가요? (Y/N) : ")
-        if yes_no.upper() == "Y":
-            await self.info_new(False)
-            await self.start_menu()
-        elif yes_no.upper() == "N":
-            await self.start_menu()
+        while True:
+            os.system("cls")
+            print(
+                f"자동 자가진단 시간 | {dia_time}"
+                f"\n교육청 지역 | {City[int(info['CityCode'])-1]}"
+                f"\n학교급 | {SchLvl[int(info['SchLvlCode'])-1]}"
+                f"\n학교명 | {info['SchoolName']}\n"
+                f"\n이름 | {info['My_Name']}"
+                f"\n생년월일 (6자리) | {info['My_Bir']}"
+                f"\n자가진단 비밀번호 | {info['My_Pass'][:2]+'**'}\n"
+            )
+            yes_no = self.dia_input("데이터를 초기화 하실건가요? (Y/N) : ")
+            if yes_no.upper() == "Y":
+                await self.info_new(False)
+                await self.start_menu()
+                break
+            elif yes_no.upper() == "N":
+                await self.start_menu()
+                break
 
     async def dia_start(self):
         """
