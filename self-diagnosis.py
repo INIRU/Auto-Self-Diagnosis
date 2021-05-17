@@ -19,14 +19,27 @@ import re
 import zipfile
 import pyautogui
 
+from pypresence import Presence
 from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import SessionNotCreatedException, NoAlertPresentException
 from selenium import webdriver
 from bs4 import BeautifulSoup
 
 
+RPC = Presence(client_id="843886226490130443")
+RPC.connect()
+RPC.update(
+    details="Auto-Self-Diagnosis",
+    state="INIRU#0001",
+    large_image="default",
+    large_text="Auto-Self-Diagnosis",
+    buttons=[{"label": "Download", "url": "https://github.com/INIRU/Auto-Self-Diagnosis/releases"},
+             {"label": "Team. Warin", "url": "https://discord.gg/cGM4PcHvQq"}]
+)
+
+
 class Self_Diagnosis():
-    __version__ = "0.1.0"
+    __version__ = "0.1.1"
 
     def __init__(self):
         asyncio.run(self.start_menu())
