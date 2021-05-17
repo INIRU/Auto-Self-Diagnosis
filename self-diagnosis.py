@@ -26,7 +26,7 @@ from bs4 import BeautifulSoup
 
 
 class Self_Diagnosis():
-    __version__ = "0.0.8"
+    __version__ = "0.0.9"
 
     def __init__(self):
         asyncio.run(self.start_menu())
@@ -521,7 +521,7 @@ class Self_Diagnosis():
                 self.dia_printf(
                     f"{info['SchoolName']} 를/(을) 재학중이신 {info['My_Name']}님 자가진단 (무증상)으로 완료되었습니다.")
                 await self.lastday_set()
-                await asyncio.sleep(0.3)
+                await asyncio.sleep(1)
                 await self.screenshot(driver)
                 driver.close()
             else:
