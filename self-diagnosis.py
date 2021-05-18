@@ -36,17 +36,20 @@ class Self_Diagnosis():
         asyncio.run(self.start_menu())
 
     async def rpc(self):
-        RPC = AioPresence("843886226490130443")
-        await RPC.connect()
-        await RPC.update(
-            details="Auto-Self-Diagnosis",
-            state="INIRU#0001",
-            large_image="default",
-            large_text="Auto-Self-Diagnosis",
-            start=time.time(),
-            buttons=[{"label": "Download", "url": "https://github.com/INIRU/Auto-Self-Diagnosis/releases"},
-                     {"label": "Warin Discord", "url": "https://discord.gg/cGM4PcHvQq"}]
-        )
+        try:
+            RPC = AioPresence("843886226490130443")
+            await RPC.connect()
+            await RPC.update(
+                details="Auto-Self-Diagnosis",
+                state="INIRU#0001",
+                large_image="default",
+                large_text="Auto-Self-Diagnosis",
+                start=time.time(),
+                buttons=[{"label": "Download", "url": "https://github.com/INIRU/Auto-Self-Diagnosis/releases"},
+                         {"label": "Warin Discord", "url": "https://discord.gg/cGM4PcHvQq"}]
+            )
+        except:
+            pass
 
     def dia_input(self, text):
         return input("[ 자가진단 ] " + text)
