@@ -18,19 +18,35 @@ import requests
 import re
 import zipfile
 import pyautogui
+import time
 
+from pypresence import AioPresence
 from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import SessionNotCreatedException, NoAlertPresentException
 from selenium import webdriver
 from bs4 import BeautifulSoup
 
 
-
 class Self_Diagnosis():
-    __version__ = "0.1.2"
+    __version__ = "0.1.3"
 
     def __init__(self):
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(self.rpc())
         asyncio.run(self.start_menu())
+
+    async def rpc(self):
+        RPC = AioPresence("843886226490130443")
+        await RPC.connect()
+        await RPC.update(
+            details="Auto-Self-Diagnosis",
+            state="INIRU#0001",
+            large_image="default",
+            large_text="Auto-Self-Diagnosis",
+            start=time.time(),
+            buttons=[{"label": "Download", "url": "https://github.com/INIRU/Auto-Self-Diagnosis/releases"},
+                     {"label": "Warin Discord", "url": "https://discord.gg/cGM4PcHvQq"}]
+        )
 
     def dia_input(self, text):
         return input("[ 자가진단 ] " + text)
