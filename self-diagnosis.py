@@ -28,14 +28,12 @@ from bs4 import BeautifulSoup
 
 
 class Self_Diagnosis():
-    __version__ = "0.1.4"
+    __version__ = "0.1.5"
 
     def __init__(self):
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(self.rpc())
         asyncio.run(self.start_menu())
 
-    async def rpc(self):
+    async def Self_Diagnosis_RPC(self):
         try:
             RPC = AioPresence("843886226490130443")
             await RPC.connect()
@@ -291,7 +289,7 @@ class Self_Diagnosis():
                 elif yes_no.upper() == "N":
                     await self.start_menu()
                     break
-        elif int(self.__version__.replace(".", "")) == int(last_version.replace(".", "")):
+        elif int(self.__version__.replace(".", "")) >= int(last_version.replace(".", "")):
             self.dia_printf("이미 최신 버전 입니다.")
 
     async def driver_setup(self):
@@ -362,6 +360,10 @@ class Self_Diagnosis():
         """
         프로그램을 실행 시켰을때 처음 나오는 메뉴이다.
         """
+        try:
+            await asyncio.wait_for(self.Self_Diagnosis_RPC(), timeout=7)
+        except asyncio.TimeoutError:
+            pass
         await self.update()
         last_version = await self.last_ver()
         if int(self.__version__.replace(".", "")) >= int(last_version.replace(".", "")):
