@@ -28,7 +28,7 @@ from bs4 import BeautifulSoup
 
 
 class Self_Diagnosis():
-    __version__ = "0.1.3"
+    __version__ = "0.1.4"
 
     def __init__(self):
         loop = asyncio.get_event_loop()
@@ -73,7 +73,8 @@ class Self_Diagnosis():
         """
         os.system("cls")
         if reason == True:
-            self.dia_printf("데이터 파일에 등록된 데이터 중 잘못된 값이 있습니다.")
+            pyautogui.alert(
+                text="데이터 파일에 등록된 데이터 중 잘못된 값이 있습니다. (다시 등록하여주세요.)", title="[ ERROR ]", button="OK")
         with open("./database/my_info.json", "r", encoding="utf-8") as r:
             info = json.load(r)
         for key in list(info.keys()):
@@ -114,7 +115,7 @@ class Self_Diagnosis():
         self.dia_printf("누락된 값이 있는지 확인중입니다.")
         for key in list(info.keys()):
             if info[key] is None and not key in ("last_dia", "lastday"):
-                await self.info_new()
+                await self.info_new(False)
                 info = await self.data_setup()
             elif info[key] is not None:
                 self.dia_printf(f"{key} | ✔")
